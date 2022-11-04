@@ -1,7 +1,7 @@
 """
     Program to check rpi temperature & send notification to telegram
     Simply set this up as hourly cron
-    
+
 """
 import os
 import telepot
@@ -25,8 +25,8 @@ commands = BotSwitch()
 temp = commands.intent('temperature')
 _temp = re.findall("\d+\.\d+", temp)[0]
 print(_temp, temp)
-# if  float(_temp) > 59:
-bot.sendMessage(
-    chat_id, f'Temperature alert: System temperature is {temp}, please check')
-# please check fan
-# please check the owner of this heavy process
+if  float(_temp) > 55:
+    bot.sendMessage(
+        chat_id, f'Temperature alert: System temperature is {temp}, please check fan')
+    # please check fan
+    # please check the owner of this heavy process
