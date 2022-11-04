@@ -1,7 +1,8 @@
 """
     Program to check rpi temperature & send notification to telegram
     Simply set this up as hourly cron
-
+    $ crontab -e
+    @hourly cd /home/pi/pi-telegram-bot && nohup python3 temperature_monitor_cron.py >> log.txt &
 """
 import os
 import telepot
