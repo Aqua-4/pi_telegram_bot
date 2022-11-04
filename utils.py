@@ -7,7 +7,7 @@ class BotSwitch:
 
     def temperature(self):
         _cmds = ['vcgencmd', 'measure_temp']
-        return subprocess.check_output(_cmds)
+        return subprocess.check_output(_cmds).decode("utf-8") 
 
     def list_all_commands(self):
         return dir(self)
