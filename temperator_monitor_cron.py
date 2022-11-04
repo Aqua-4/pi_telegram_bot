@@ -2,7 +2,7 @@
 import os
 import telepot
 import time
-import BotSwitch
+from utils import BotSwitch
 import re
 from dotenv import load_dotenv
 
