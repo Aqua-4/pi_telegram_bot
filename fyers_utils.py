@@ -6,14 +6,15 @@ Created on Wed Nov  9 00:42:21 2022
 """
 
 # AUTHORIZATION:
-# import webbrowser
 from fyers_api import fyersModel
 from fyers_api import accessToken
 from datetime import date
+import pandas as pd
 from urllib.parse import urlparse, parse_qsl
 import time
 from dotenv import load_dotenv
 import os
+# import webbrowser
 
 load_dotenv('fyers.env')
 
@@ -40,6 +41,11 @@ class FyersUtils:
         self.bot_print = print
         if print_to_bot:
             self.bot_print = print_to_bot
+
+        data = {'symbol': [], 'timestamp': [], 'open': [],
+                'high': [], 'low': [], 'close': [], 'volume': []}
+
+        self.df = pd.DataFrame.from_dict(data)
 
     def __extract_auth_code(self, auth_str):
         try:
@@ -135,14 +141,18 @@ class FyersUtils:
         return result
 
     def get_quote_data(self, symbol_name="NSE:NIFTYBANK-INDEX"):
-
         meta_data = {"symbols": symbol_name}
         quote_data = self.fyers.quotes(meta_data)
         raw_data = quote_data.get('d')[0].get('v')
         cmd = raw_data.get('cmd')
         polished_data = self.__xform_cmd(cmd)
         polished_data['symbol'] = raw_data.get('short_name')
+        new_row = pd.Series(polished_data)
+        self.df = pd.concat([self.df, new_row.to_frame().T], ignore_index=True)
         return polished_data
+
+    def save_df(self):
+        self.df.to_csv(f'./data_store/{date_str}.csv')
 
 
 """

@@ -3,7 +3,7 @@
     Program to notify user about stock market changes
     Simply set this up as hourly cron
     $ crontab -e
-    @reboot cd /home/pi/pi-telegram-bot && nohup python3 stock_market_monitor.py >> stock_market_monitor_log.txt &
+    11 9 * * 1-5 cd /home/pi/pi-telegram-bot && nohup python3 stock_market_monitor.py > stock_market_monitor_log.txt &
 """
 import os
 import telepot
@@ -71,6 +71,7 @@ today330pm = datetime.now().replace(hour=15, minute=30, second=0, microsecond=0)
 while datetime.now() > today910am and datetime.now() < today330pm:
     quote_data = fu.get_quote_data()
     bot_send_message(quote_data)
+    fu.save_df()
     time.sleep(60)
 
 bot_send_message('Markets has been closed, shutting down bot')
