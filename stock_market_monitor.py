@@ -71,7 +71,7 @@ today330pm = datetime.now().replace(hour=15, minute=30, second=0, microsecond=0)
 while datetime.now() > today910am and datetime.now() < today330pm:
     quote_data = fu.get_quote_data()
     bot_send_message(quote_data)
-    fu.save_df()
+    fu.save_df(quote_data)
     time.sleep(60)
 
 bot_send_message('Markets has been closed, shutting down bot')

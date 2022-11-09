@@ -147,11 +147,11 @@ class FyersUtils:
         cmd = raw_data.get('cmd')
         polished_data = self.__xform_cmd(cmd)
         polished_data['symbol'] = raw_data.get('short_name')
-        new_row = pd.Series(polished_data)
-        self.df = pd.concat([self.df, new_row.to_frame().T], ignore_index=True)
         return polished_data
 
-    def save_df(self):
+    def save_df(self, data):
+        new_row = pd.Series(data)
+        self.df = pd.concat([self.df, new_row.to_frame().T], ignore_index=True)
         self.df.to_csv(f'./data_store/{date_str}.csv')
 
 
