@@ -76,7 +76,7 @@ while datetime.now() > today910am and datetime.now() < today330pm:
     if fu.is_high_broken(quote_data):
         is_notify_user = True
         bot_send_message('Broke market high')
-    if fu.is_low_broken()(quote_data):
+    if fu.is_low_broken(quote_data):
         is_notify_user = True
         bot_send_message('Broke market low')
     if is_notify_user:
