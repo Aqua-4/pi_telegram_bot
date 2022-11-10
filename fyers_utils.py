@@ -154,6 +154,13 @@ class FyersUtils:
         self.df = pd.concat([self.df, new_row.to_frame().T], ignore_index=True)
         self.df.to_csv(f'./data_store/{date_str}.csv')
 
+    def is_quote_sideways(self, symbol_name="NSE:NIFTYBANK-INDEX"):
+        delta = self.df[['high', 'low', 'open', 'close']].tail().std()
+        for i in delta:
+            if i > 0:
+                return False
+        return True
+
 
 """
 fu = FyersUtils()
