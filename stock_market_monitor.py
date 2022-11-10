@@ -69,9 +69,19 @@ today910am = datetime.now().replace(hour=9, minute=10, second=0, microsecond=0)
 today330pm = datetime.now().replace(hour=15, minute=30, second=0, microsecond=0)
 
 while datetime.now() > today910am and datetime.now() < today330pm:
+    is_notify_user = False
     quote_data = fu.get_quote_data()
-    if not fu.is_quote_sideways():
+    # if not fu.is_quote_sideways():
+    #    is_notify_user = True
+    if fu.is_high_broken(quote_data):
+        is_notify_user = True
+        bot_send_message('Broke market high')
+    if fu.is_low_broken()(quote_data):
+        is_notify_user = True
+        bot_send_message('Broke market low')
+    if is_notify_user:
         bot_send_message(quote_data)
+
     fu.save_df(quote_data)
     time.sleep(60)
 

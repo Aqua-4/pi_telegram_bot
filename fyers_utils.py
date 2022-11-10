@@ -161,6 +161,16 @@ class FyersUtils:
                 return False
         return True
 
+    def is_low_broken(self, data, symbol_name="NSE:NIFTYBANK-INDEX"):
+        if data.get('low') < self.df['low'].min():
+            return True
+        return False
+
+    def is_high_broken(self, data, symbol_name="NSE:NIFTYBANK-INDEX"):
+        if data.get('high') > self.df['high'].max():
+            return True
+        return False
+
 
 """
 fu = FyersUtils()
