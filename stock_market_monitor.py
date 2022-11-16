@@ -61,7 +61,13 @@ def get_fyers_session():
 
 
 fu = FyersUtils(bot_send_message)
-get_fyers_session()
+try:
+    get_fyers_session()
+except Exception as err:
+    print(err)
+    bot_send_message('Failed to establish session, trying one last time')
+    get_fyers_session()
+
 fyers = fu.fyers
 
 now = datetime.now()
