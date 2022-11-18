@@ -45,16 +45,18 @@ def get_fyers_session():
     if not fu.is_bot_session_active():
         #auth_code_gen_url = fu._get_auth_url()
         fu._get_auth_url()
-        counter = 10
         msg = bot.getUpdates()
-        while not msg and counter < 15:
+        while not msg:
             msg = bot.getUpdates()
-            time.sleep(counter)
-            counter += 1
-        update_id, chat_id, auth_code_str = bot_get_message_text(msg[-1])
+            time.sleep(30)
+        update_id, chat_id, message_text = bot_get_message_text(msg[-1])
+        if message_text == 'exit':
+            bot_send_message('Closing the bot on users request')
+            exit()
         # add offest to remove last message
         bot.getUpdates(offset=update_id+1)
-        fu._set_auth_code(auth_code_str)
+        fu._set_auth_code(message_text)
+        time.sleep(5)
         get_fyers_session()
     else:
         pass
