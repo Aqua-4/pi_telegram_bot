@@ -42,7 +42,7 @@ class FyersUtils:
         if print_to_bot:
             self.bot_print = print_to_bot
 
-        data = {'symbol': [], 'timestamp': [], 'open': [],
+        data = {'symbol': [], 'datetime': [], 'open': [],
                 'high': [], 'low': [], 'close': [], 'volume': []}
 
         self.df = pd.DataFrame.from_dict(data)
@@ -131,7 +131,7 @@ class FyersUtils:
 
     def __xform_cmd(self, cmd):
         result = {}
-        result['timestamp'] = time.strftime(
+        result['datetime'] = time.strftime(
             '%Y-%m-%d %H:%M:%S', time.localtime(cmd['t']))
         result['open'] = cmd['o']
         result['high'] = cmd['h']
