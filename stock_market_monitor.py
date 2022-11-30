@@ -49,14 +49,17 @@ def get_fyers_session():
         while not msg:
             msg = bot.getUpdates()
             time.sleep(30)
-        update_id, chat_id, message_text = bot_get_message_text(msg[-1])
-        if message_text == 'exit':
-            bot_send_message('Closing the bot on users request')
-            exit()
-        # add offest to remove last message
-        bot.getUpdates(offset=update_id+1)
-        fu._set_auth_code(message_text)
-        time.sleep(5)
+        try:
+            update_id, chat_id, message_text = bot_get_message_text(msg[-1])
+            # add offest to remove last message
+            bot.getUpdates(offset=update_id+1)
+            if message_text == 'exit':
+                bot_send_message('Closing the bot on users request')
+                exit()
+            fu._set_auth_code(message_text)
+            time.sleep(5)
+        except:
+            bot_send_message('Error message text')
         get_fyers_session()
     else:
         pass
