@@ -172,17 +172,21 @@ class FyersUtils:
         if data.get('high') > self.df['high'].max():
             return True
         return False
-    
-    def download_historical_data(self, symbol_name = 'BANKNIFTY22NOVFUT', from_date = "2022-11-1" , to_date = "2022-11-19"):
-        data = {"symbol":"NSE:BANKNIFTY22NOVFUT","resolution":"1","date_format":1,"range_from":from_date,"range_to":to_date,"cont_flag":"1"}
+
+    def download_historical_data(self, symbol_name='NSE:NIFTYBANK-INDEX', granularity_in_mins=1, from_date="2022-11-1", to_date="2022-11-30"):
+        data = {"symbol": symbol_name, "resolution": granularity_in_mins,
+                "date_format": 1, "range_from": from_date, "range_to": to_date, "cont_flag": "1"}
         fyers_historical_data = self.fyers.history(data)
-        fyers_df  = pd.DataFrame.from_records(fyers_historical_data['candles'],columns=['epoch_time','open','high','low','close','volume'])
-        
+        fyers_df = pd.DataFrame.from_records(fyers_historical_data['candles'], columns=[
+                                             'epoch_time', 'open', 'high', 'low', 'close', 'volume'])
+
         fyers_df['symbol'] = symbol_name
-        fyers_df['datetime'] = pd.to_datetime(fyers_df['epoch_time'],unit='s',utc=True).map(lambda x: x.tz_convert('Asia/Kolkata')).dt.tz_localize(None)
-        fyers_df.set_index(['datetime'],inplace=True)
-        fyers_df.drop(columns=['epoch_time'],inplace=True)
-        fyers_df.to_csv(f'./data_store/{symbol_name}_{from_date}_{to_date}.csv')
+        fyers_df['datetime'] = pd.to_datetime(fyers_df['epoch_time'], unit='s', utc=True).map(
+            lambda x: x.tz_convert('Asia/Kolkata')).dt.tz_localize(None)
+        fyers_df.set_index(['datetime'], inplace=True)
+        fyers_df.drop(columns=['epoch_time'], inplace=True)
+        fyers_df.to_csv(
+            f'./data_store/{symbol_name}_{from_date}_{to_date}.csv')
         return fyers_df
 
 
