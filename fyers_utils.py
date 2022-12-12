@@ -4,22 +4,38 @@ Created on Wed Nov  9 00:42:21 2022
 
 @author: parashar
 """
+# mongoDB utils
+from datetime import datetime
+from dateutil import tz
+from dotenv import load_dotenv
+import time
+from urllib.parse import urlparse, parse_qsl
+import pandas as pd
+from datetime import date
+from fyers_api import accessToken
+from fyers_api import fyersModel
+from mongodb_utils import MongoDB
+import sys
+import os
+
+# getting the name of the directory
+# where the this file is present.
+parent = os.path.dirname(os.path.realpath('./'))
+
+# adding the parent directory to
+# the sys.path.
+sys.path.append(os.path.join(parent, 'fundamental-omniwatcher'))
+
+# -----------------------------------------
+
 
 # AUTHORIZATION:
-from fyers_api import fyersModel
-from fyers_api import accessToken
-from datetime import date
-import pandas as pd
-from urllib.parse import urlparse, parse_qsl
-import time
-from dotenv import load_dotenv
-import os
-from dateutil import tz
 
 # import webbrowser
 
 load_dotenv('fyers.env')
 
+datetime_format = '%Y-%m-%d %H:%M:%S'
 
 today = date.today()
 date_str = today.strftime("%d-%m-%Y")
@@ -48,6 +64,8 @@ class FyersUtils:
                 'high': [], 'low': [], 'close': [], 'volume': []}
 
         self.df = pd.DataFrame.from_dict(data)
+
+        self.mongo_instance = MongoDB()
 
     def __extract_auth_code(self, auth_str):
         try:
@@ -134,7 +152,7 @@ class FyersUtils:
     def __xform_cmd(self, cmd):
         result = {}
         result['datetime'] = time.strftime(
-            '%Y-%m-%d %H:%M:%S', time.localtime(cmd['t']))
+            datetime_format, time.localtime(cmd['t']))
         result['open'] = cmd['o']
         result['high'] = cmd['h']
         result['low'] = cmd['l']
@@ -153,6 +171,19 @@ class FyersUtils:
 
     def save_df(self, data):
         new_row = pd.Series(data)
+
+        collection = self.mongo_instance.use_collection(
+            data['symbol'], 'seconds')
+
+        self.mongo_instance.upsert_record(collection, {
+            "datetime": datetime.strptime(data['datetime'], datetime_format),
+            'open': data.get('open'),
+            'high': data.get('high'),
+            'low': data.get('low'),
+            'close': data.get('close'),
+            'volume': data.get('volume')
+        })
+
         self.df = pd.concat([self.df, new_row.to_frame().T], ignore_index=True)
         self.df.to_csv(f'./data_store/{date_str}.csv')
 
