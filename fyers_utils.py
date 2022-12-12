@@ -4,8 +4,7 @@ Created on Wed Nov  9 00:42:21 2022
 
 @author: parashar
 """
-# mongoDB utils
-from datetime import datetime
+from datetime import datetime, timedelta
 from dateutil import tz
 from dotenv import load_dotenv
 import time
@@ -14,18 +13,13 @@ import pandas as pd
 from datetime import date
 from fyers_api import accessToken
 from fyers_api import fyersModel
-from mongodb_utils import MongoDB
 import sys
 import os
 
-# getting the name of the directory
-# where the this file is present.
+# mongoDB utils
 parent = os.path.dirname(os.path.realpath('./'))
-
-# adding the parent directory to
-# the sys.path.
 sys.path.append(os.path.join(parent, 'fundamental-omniwatcher'))
-
+from mongodb_utils import MongoDB  # should be placed after sys.path.append
 # -----------------------------------------
 
 
@@ -60,12 +54,9 @@ class FyersUtils:
         if print_to_bot:
             self.bot_print = print_to_bot
 
-        data = {'symbol': [], 'datetime': [], 'open': [],
-                'high': [], 'low': [], 'close': [], 'volume': []}
-
-        self.df = pd.DataFrame.from_dict(data)
-
         self.mongo_instance = MongoDB()
+        self.today = datetime.strptime(datetime.strftime(
+            datetime.now(), "%Y-%m-%d"), "%Y-%m-%d")
 
     def __extract_auth_code(self, auth_str):
         try:
@@ -167,11 +158,10 @@ class FyersUtils:
         cmd = raw_data.get('cmd')
         polished_data = self.__xform_cmd(cmd)
         polished_data['symbol'] = raw_data.get('short_name')
+        polished_data['symbol_fyers'] = symbol_name
         return polished_data
 
-    def save_df(self, data):
-        new_row = pd.Series(data)
-
+    def save_data(self, data):
         collection = self.mongo_instance.use_collection(
             data['symbol'], 'seconds')
 
@@ -184,9 +174,6 @@ class FyersUtils:
             'volume': data.get('volume')
         })
 
-        self.df = pd.concat([self.df, new_row.to_frame().T], ignore_index=True)
-        self.df.to_csv(f'./data_store/{date_str}.csv')
-
     def is_quote_sideways(self, symbol_name="NSE:NIFTYBANK-INDEX"):
         delta = self.df[['high', 'low', 'open', 'close']].tail().std()
         for i in delta:
@@ -194,15 +181,43 @@ class FyersUtils:
                 return False
         return True
 
-    def is_low_broken(self, data, symbol_name="NSE:NIFTYBANK-INDEX"):
-        if data.get('low') < self.df['low'].min():
-            return True
-        return False
+    def is_high_broken(self, data):
+        _high = data.get('high', 0)
+        collection = self.mongo_instance.use_collection(
+            data['symbol'], 'seconds')
 
-    def is_high_broken(self, data, symbol_name="NSE:NIFTYBANK-INDEX"):
-        if data.get('high') > self.df['high'].max():
-            return True
-        return False
+        crossover_query = collection.find_one(
+            {"datetime": {"$gte": self.today}, "high": {"$gt": _high}})
+        if crossover_query:
+            return False
+        return True
+
+    def is_low_broken(self, data):
+        _low = data.get('low', 0)
+        collection = self.mongo_instance.use_collection(
+            data['symbol'], 'seconds')
+
+        crossover_query = collection.find_one(
+            {"datetime": {"$gte": self.today}, "low": {"$lt": _low}})
+        if crossover_query:
+            return False
+        return True
+
+    def historical_high_broken(self, data, symbol_name):
+        date_delta = timedelta(days=7)
+        date_before_week = datetime.now() - date_delta
+
+        collection = self.mongo_instance.use_collection(
+            data['symbol'], 'seconds')
+
+        x = collection.aggregate([
+            {"$match": {"datetime": {"$gte": date_before_week}}},
+            {"$group": {"_id": {"$dateToString": {"format": "%Y-%m-%d", "date": "$datetime"}},
+                        "high": {"$max": '$high'}}},
+        ])
+
+        for i in x:
+            print(i)
 
     def download_historical_data(self, symbol_name='NSE:NIFTYBANK-INDEX', granularity_in_mins=1, from_date="2022-11-1", to_date="2022-11-30"):
         data = {"symbol": symbol_name, "resolution": granularity_in_mins,
