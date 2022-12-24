@@ -53,9 +53,9 @@ def get_fyers_session():
             update_id, chat_id, message_text = bot_get_message_text(msg[-1])
             # add offest to remove last message
             bot.getUpdates(offset=update_id+1)
-            if message_text == 'exit':
+            if message_text.lower() == 'exit':
                 bot_send_message('Closing the bot on users request')
-                exit()
+                quit()
             fu._set_auth_code(message_text)
             time.sleep(5)
         except:
@@ -84,10 +84,10 @@ while datetime.now() > today910am and datetime.now() < today330pm:
     quote_data = fu.get_quote_data()
     # if not fu.is_quote_sideways():
     #    is_notify_user = True
-    if fu.is_high_broken(quote_data):
+    if fu.is_high_broken_df(quote_data):
         is_notify_user = True
         bot_send_message('Broke market high')
-    if fu.is_low_broken(quote_data):
+    if fu.is_low_broken_df(quote_data):
         is_notify_user = True
         bot_send_message('Broke market low')
     if is_notify_user:

@@ -4,6 +4,8 @@ Created on Wed Nov  9 00:42:21 2022
 
 @author: parashar
 """
+
+# AUTHORIZATION:
 from datetime import datetime, timedelta
 from dateutil import tz
 from dotenv import load_dotenv
@@ -22,16 +24,10 @@ sys.path.append(os.path.join(parent, 'fundamental-omniwatcher'))
 from mongodb_utils import MongoDB  # should be placed after sys.path.append
 # -----------------------------------------
 
-
-# AUTHORIZATION:
-
-# import webbrowser
-
 load_dotenv('fyers.env')
 
-datetime_format = '%Y-%m-%d %H:%M:%S'
-
 today = date.today()
+datetime_format = '%Y-%m-%d %H:%M:%S'
 date_str = today.strftime("%d-%m-%Y")
 
 
@@ -54,9 +50,10 @@ class FyersUtils:
         if print_to_bot:
             self.bot_print = print_to_bot
 
-        self.mongo_instance = MongoDB()
-        self.today = datetime.strptime(datetime.strftime(
-            datetime.now(), "%Y-%m-%d"), "%Y-%m-%d")
+        data = {'symbol': [], 'datetime': [], 'open': [],
+                'high': [], 'low': [], 'close': [], 'volume': []}
+
+        self.df = pd.DataFrame.from_dict(data)
 
     def __extract_auth_code(self, auth_str):
         try:
@@ -174,6 +171,11 @@ class FyersUtils:
             'volume': data.get('volume')
         })
 
+    def save_df(self, data):
+        new_row = pd.Series(data)
+        self.df = pd.concat([self.df, new_row.to_frame().T], ignore_index=True)
+        self.df.to_csv(f'./data_store/{date_str}.csv')
+
     def is_quote_sideways(self, symbol_name="NSE:NIFTYBANK-INDEX"):
         delta = self.df[['high', 'low', 'open', 'close']].tail().std()
         for i in delta:
@@ -181,7 +183,17 @@ class FyersUtils:
                 return False
         return True
 
-    def is_high_broken(self, data):
+    def is_low_broken_df(self, data, symbol_name="NSE:NIFTYBANK-INDEX"):
+        if data.get('low') < self.df['low'].min():
+            return True
+        return False
+
+    def is_high_broken_df(self, data, symbol_name="NSE:NIFTYBANK-INDEX"):
+        if data.get('high') > self.df['high'].max():
+            return True
+        return False
+
+    def is_high_broken_db(self, data):
         _high = data.get('high', 0)
         collection = self.mongo_instance.use_collection(
             data['symbol'], 'seconds')
@@ -192,7 +204,7 @@ class FyersUtils:
             return False
         return True
 
-    def is_low_broken(self, data):
+    def is_low_broken_db(self, data):
         _low = data.get('low', 0)
         collection = self.mongo_instance.use_collection(
             data['symbol'], 'seconds')
