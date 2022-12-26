@@ -17,11 +17,6 @@ from fyers_api import accessToken
 from fyers_api import fyersModel
 import sys
 import os
-
-# mongoDB utils
-parent = os.path.dirname(os.path.realpath('./'))
-sys.path.append(os.path.join(parent, 'fundamental-omniwatcher'))
-from mongodb_utils import MongoDB  # should be placed after sys.path.append
 # -----------------------------------------
 
 load_dotenv('fyers.env')
@@ -32,7 +27,7 @@ date_str = today.strftime("%d-%m-%Y")
 
 
 class FyersUtils:
-    def __init__(self, print_to_bot=None):
+    def __init__(self, print_to_bot=None, mongo_instance = None):
 
         # in the next iteration get these from user
         redirect_url = os.environ['redirect_url']
@@ -54,6 +49,11 @@ class FyersUtils:
                 'high': [], 'low': [], 'close': [], 'volume': []}
 
         self.df = pd.DataFrame.from_dict(data)
+        
+        if mongo_instance:
+            self.mongo_instance = mongo_instance
+        else:
+            print('Mongo DB not connected')
 
     def __extract_auth_code(self, auth_str):
         try:
@@ -246,6 +246,32 @@ class FyersUtils:
         fyers_df.to_csv(
             f'./data_store/{symbol_name}_{from_date}_{to_date}.csv')
         return fyers_df
+
+    def dump_historical_data_equity(self, collection_name,symbol_name='NSE:INFY-EQ', from_date="2022-11-1", to_date=date_str, granularity_in_mins=60):
+        data = {"symbol": symbol_name, "resolution": granularity_in_mins,
+                "date_format": 1, "range_from": from_date, "range_to": to_date, "cont_flag": "1"}
+        fyers_historical_data = self.fyers.history(data)
+        try:
+            fyers_df = pd.DataFrame.from_records(fyers_historical_data['candles'], columns=[
+                                                 'epoch_time', 'open', 'high', 'low', 'close', 'volume'])
+        except:
+            print("ERROR:",fyers_historical_data)
+
+        fyers_df['datetime'] = pd.to_datetime(fyers_df['epoch_time'], unit='s', utc=True).map(
+            lambda x: x.tz_convert('Asia/Kolkata')).dt.tz_localize(None)
+        fyers_df.drop(columns=['epoch_time'], inplace=True)
+        # df conversion upto this line
+        
+        try:
+            collection = self.mongo_instance.use_collection(collection_name, 'hours')
+            for _idx,_record in fyers_df.iterrows():
+                self.mongo_instance.upsert_record(collection, _record.to_dict())
+        except:
+            #fyers_df.set_index(['datetime'], inplace=True)
+            fyers_df.to_csv(
+                f'./data_store/{symbol_name}_{from_date}_{to_date}.csv')
+        return fyers_df
+
 
 
 """

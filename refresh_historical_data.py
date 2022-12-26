@@ -18,6 +18,7 @@ parent = os.path.dirname(os.path.realpath('./'))
 sys.path.append(os.path.join(parent,'fundamental-omniwatcher'))
 
 from mongodb_utils import MongoDB
+from neodb_utils import NeoDB
 
 
 import os
@@ -28,6 +29,8 @@ from dotenv import load_dotenv
 from datetime import datetime,timedelta
 
 load_dotenv()
+load_dotenv("db.env")
+
 
 botname = 'aqua4_pi_bot'  # bot secret will be stored in the env var with this key
 bot = telepot.Bot(os.environ[botname])
@@ -79,8 +82,12 @@ def get_fyers_session():
     else:
         pass
 
+# neo4j & mongo init intance here
+neo_instance = NeoDB(username='neo4j', password='Gramener@123', host=os.environ['host'])
+mongo_instance = MongoDB(username='mongo_root', password='Gramenr123', host=os.environ['host'])
 
-fu = FyersUtils(bot_send_message)
+
+fu = FyersUtils(bot_send_message,mongo_instance)
 try:
     get_fyers_session()
 except Exception as err:
@@ -89,76 +96,38 @@ except Exception as err:
     get_fyers_session()
 
 fyers = fu.fyers
-
-now = datetime.now()
-today910am = datetime.now().replace(hour=9, minute=10, second=0, microsecond=0)
-today330pm = datetime.now().replace(hour=15, minute=30, second=0, microsecond=0)
-
-while datetime.now() > today910am and datetime.now() < today330pm:
-    is_notify_user = False
-    quote_data = fu.get_quote_data()
-    # if not fu.is_quote_sideways():
-    #    is_notify_user = True
-    if fu.is_high_broken(quote_data):
-        is_notify_user = True
-        bot_send_message('Broke market high')
-    if fu.is_low_broken(quote_data):
-        is_notify_user = True
-        bot_send_message('Broke market low')
-    if is_notify_user:
-        bot_send_message(quote_data)
-
-    fu.save_df(quote_data)
-    time.sleep(60)
-
-bot_send_message('Markets has been closed, shutting down bot')
+# normal fyers login upto this point
 
 
-tmp_df=fu.download_historical_data(symbol_name = "NSE:NIFTYBANK-INDEX", from_date = "2022-11-1" , to_date = "2022-11-30")
 
+def download_data_chunk(ticker_name, chunk_in_days = 99):
+    # TODO: if the stock exists on fyers check in mongo
+    # TODO: if stock exists in mongo check the min & max - use this delta to cut down cost
+    # TODO: if stock exists download the data for x years & dump into mongo DB
 
-mongo_instance = MongoDB()
-
-bnf = mongo_instance.use_collection('CRUDEOIL22DECFUT', 'seconds')
-
-bnf.find({
-    'high': {"$gt":100}
-    })
-
-
-x= bnf.aggregate([
-    { "$project" : { "dt":{ "$dateToString": 
-                           { "format": "%Y-%m-%d", "date": "$datetime"}     }}}
-    #{"$group":{"$month":'$dateteime'}}
-    ])
+    ymd_format = "%Y-%m-%d"
+    today = datetime.now()
     
-today = datetime.strptime(datetime.strftime(datetime.now(), "%Y-%m-%d"), "%Y-%m-%d")
+    start_date = datetime.strptime( "2019-01-01", ymd_format)
+    to_date = (start_date + timedelta(days=99))
+    
+    while to_date < today:
+        print( start_date.strftime(ymd_format) , 'to' , to_date.strftime(ymd_format) )
+        fu.dump_historical_data_equity(ticker_name, symbol_name = f"NSE:{ticker_name}-EQ", from_date = start_date.strftime(ymd_format) , to_date = to_date.strftime(ymd_format))
 
-date_delta = timedelta(days = 7)
-date_before_week = datetime.now() - date_delta 
+        start_date = (start_date + timedelta(days=99))
+        to_date = (start_date + timedelta(days=99))
+        if to_date > today:
+            print( start_date.strftime(ymd_format) , 'to' , today.strftime(ymd_format) )
+            fu.dump_historical_data_equity(ticker_name, symbol_name = f"NSE:{ticker_name}-EQ", from_date = start_date.strftime(ymd_format) , to_date = today.strftime(ymd_format))
+    
+        
+    
+    
 
-datetime(date_before_week)
-
-today_high = 0
-max_query= bnf.find( { "datetime": { "$gte": today } }).sort("high",-1).limit(1)
-for i in max_query:
-    today_high = i.get('high')
-today_high
-
-
-bnf.find_one( { "datetime": { "$gte": today } ,"high" :{"$gt":today_high} } )
-
-x= bnf.aggregate([
-    { "$match": { "datetime": { "$gte": today } } },
-    { "$group": { "_id": { "$dateToString": { "format": "%Y-%m-%d", "date": "$datetime"} },
-       "low": { "$max": '$high' } } },
-  ])
-
-for i in x:
-    print(i)
-
-
-weekly_demand_collection.find({
-    "center_id" : 55,
-    "checkout_price" : { "$lt" : 200, "$gt" : 100}
-})
+# get all ticker names from neo4j 
+all_stocks = neo_instance.get_all_nodes()
+# for each tickername check if the equity stock exists on fyers
+for stock_meta in all_stocks:
+    ticker_name = stock_meta.get("ticker_name")    
+download_data_chunk('DLINKINDIA')
