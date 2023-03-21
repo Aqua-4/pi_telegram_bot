@@ -122,9 +122,12 @@ def download_data_chunk(ticker_name, chunk_in_days = 99):
             fu.dump_historical_data_equity(ticker_name, symbol_name = f"NSE:{ticker_name}-EQ", from_date = start_date.strftime(ymd_format) , to_date = today.strftime(ymd_format))
     
         
-    
-    
+df = fu.download_historical_data('NSE:BIOCON-EQ',granularity_in_mins=1, from_date="2022-9-1", to_date="2022-10-1")
+df.to_csv('biocon-intraday_prev2.csv')    
 
+
+d_df = df[ (df.index > '2022-09-1') & (df.index < '2022-09-3') ]
+ 
 # get all ticker names from neo4j 
 all_stocks = neo_instance.get_all_nodes()
 # for each tickername check if the equity stock exists on fyers
