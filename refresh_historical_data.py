@@ -101,33 +101,64 @@ fyers = fu.fyers
 
 
 def download_data_chunk(ticker_name, chunk_in_days = 99):
+    """
+    Download data from 2019
+
+    Parameters
+    ----------
+    ticker_name : TYPE
+        DESCRIPTION.
+    chunk_in_days : TYPE, optional
+        DESCRIPTION. The default is 99.
+
+    Returns
+    -------
+    None.
+
+    """
     # TODO: if the stock exists on fyers check in mongo
-    # TODO: if stock exists in mongo check the min & max - use this delta to cut down cost
+    _mongo_collection =  mongo_instance.use_collection(ticker_name)
     # TODO: if stock exists download the data for x years & dump into mongo DB
+    min_date, max_date =  mongo_instance.get_minmax_dates(_mongo_collection)
 
     ymd_format = "%Y-%m-%d"
     today = datetime.now()
-    
+        
     start_date = datetime.strptime( "2019-01-01", ymd_format)
+ 
+    # TODO: if stock exists in mongo check the min & max - use this delta to cut down cost. Need to do same for min_date
+    if max_date and start_date < max_date:
+        start_date = max_date
     to_date = (start_date + timedelta(days=99))
     
+    if to_date > today:
+        to_date = (today - timedelta(minutes=1))
+    
+    
     while to_date < today:
+        _fyers_symbol_name = f"NSE:{ticker_name}-EQ"
         print( start_date.strftime(ymd_format) , 'to' , to_date.strftime(ymd_format) )
-        fu.dump_historical_data_equity(ticker_name, symbol_name = f"NSE:{ticker_name}-EQ", from_date = start_date.strftime(ymd_format) , to_date = to_date.strftime(ymd_format))
+        fu.dump_historical_data_equity(ticker_name, symbol_name = _fyers_symbol_name, from_date = start_date.strftime(ymd_format) , to_date = to_date.strftime(ymd_format))
 
         start_date = (start_date + timedelta(days=99))
         to_date = (start_date + timedelta(days=99))
-        if to_date > today:
+        if to_date > today and start_date < today:
             print( start_date.strftime(ymd_format) , 'to' , today.strftime(ymd_format) )
-            fu.dump_historical_data_equity(ticker_name, symbol_name = f"NSE:{ticker_name}-EQ", from_date = start_date.strftime(ymd_format) , to_date = today.strftime(ymd_format))
+            fu.dump_historical_data_equity(ticker_name, symbol_name = _fyers_symbol_name, from_date = start_date.strftime(ymd_format) , to_date = today.strftime(ymd_format))
     
         
-df = fu.download_historical_data('NSE:BIOCON-EQ',granularity_in_mins=1, from_date="2022-9-1", to_date="2022-10-1")
-df.to_csv('biocon-intraday_prev2.csv')    
+# df = fu.download_historical_data('NSE:BIOCON-EQ',granularity_in_mins=1, from_date="2022-9-1", to_date="2022-10-1")
+# df.to_csv('biocon-intraday_prev2.csv')    
 
 
-d_df = df[ (df.index > '2022-09-1') & (df.index < '2022-09-3') ]
+# d_df = df[ (df.index > '2022-09-1') & (df.index < '2022-09-3') ]
  
+# TODO: get all ticker names from neo4j 
+# all_stocks = neo_instance.get_all_nodes()
+# # for each tickername check if the equity stock exists on fyers
+# for stock_meta in all_stocks:
+#     ticker_name = stock_meta.get("ticker_name")
+
 # get all ticker names from neo4j 
 all_stocks = neo_instance.get_all_nodes()
 # for each tickername check if the equity stock exists on fyers
