@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-    Program to notify user about stock market changes
-    Simply set this up as hourly cron
+    Program to refresh market data 
+    Triggered as cron every morning or on reboot. This program is to be kept running to maintain the instance of broker api. Closes after market hours.
     $ crontab -e
     11 9 * * 1-5 cd /home/pi/pi-telegram-bot && nohup python3 stock_market_monitor.py > stock_market_monitor_log.txt &
 """
@@ -15,7 +15,7 @@ parent = os.path.dirname(os.path.realpath('./'))
  
 # adding the parent directory to
 # the sys.path.
-sys.path.append(os.path.join(parent,'fundamental-omniwatcher'))
+sys.path.append(os.path.join(parent,'fundamental_omniwatcher'))
 
 from mongodb_utils import MongoDB
 from neodb_utils import NeoDB
