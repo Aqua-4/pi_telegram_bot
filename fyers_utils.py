@@ -247,7 +247,7 @@ class FyersUtils:
             f'./data_store/{symbol_name}_{from_date}_{to_date}.csv')
         return fyers_df
 
-    def dump_historical_data_equity(self, collection_name,symbol_name='NSE:INFY-EQ', from_date="2022-11-1", to_date=date_str, granularity_in_mins=60):
+    def dump_historical_data_equity(self, collection_name,symbol_name='NSE:INFY-EQ', from_date="2022-11-1",to_date=date_str, drop_latest=False, granularity_in_mins=60):
         data = {"symbol": symbol_name, "resolution": granularity_in_mins,
                 "date_format": 1, "range_from": from_date, "range_to": to_date, "cont_flag": "1"}
         fyers_historical_data = self.fyers.history(data)
@@ -261,6 +261,12 @@ class FyersUtils:
             lambda x: x.tz_convert('Asia/Kolkata')).dt.tz_localize(None)
         fyers_df.drop(columns=['epoch_time'], inplace=True)
         # df conversion upto this line
+        
+        if drop_latest:
+            # drop the last row
+            fyers_df.drop(index=fyers_df.index[-1], inplace=True)
+
+        fyers_df.to_csv('./data_store/latest_dump_historical_data_equity.csv')
         
         try:
             collection = self.mongo_instance.use_collection(collection_name, 'hours')

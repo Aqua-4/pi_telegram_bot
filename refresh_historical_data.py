@@ -11,18 +11,15 @@ from dotenv import load_dotenv
 from fyers_utils import FyersUtils
 import time
 import telepot
-from neodb_utils import NeoDB
-from mongodb_utils import MongoDB
 import sys
 import os
 
-# getting the name of the directory
-# where the this file is present.
-parent = os.path.dirname(os.path.realpath('./'))
-
-# adding the parent directory to
-# the sys.path.
-sys.path.append(os.path.join(parent, 'fundamental_omniwatcher'))
+# getting the name of the directory where the this file is present.
+parent = os.path.dirname(os.path.realpath('./'))  # noqa
+# adding the parent directory to the sys.path.
+sys.path.append(os.path.join(parent, 'fundamental_omniwatcher'))  # noqa
+from mongodb_utils import MongoDB  # noqa
+from neodb_utils import NeoDB  # noqa
 
 
 load_dotenv()
@@ -131,14 +128,18 @@ def download_data_chunk(ticker_name, chunk_in_days=99):
     to_date = (start_date + timedelta(days=99))
 
     if to_date > today:
-        to_date = (today - timedelta(minutes=1))
+        to_date = today
 
-    while to_date < today:
+    while to_date <= today:
         _fyers_symbol_name = f"NSE:{ticker_name}-EQ"
         print(start_date.strftime(ymd_format),
               'to', to_date.strftime(ymd_format))
-        fu.dump_historical_data_equity(ticker_name, symbol_name=_fyers_symbol_name, from_date=start_date.strftime(
-            ymd_format), to_date=to_date.strftime(ymd_format))
+        if to_date == today:
+            fu.dump_historical_data_equity(ticker_name, symbol_name=_fyers_symbol_name, from_date=start_date.strftime(
+                ymd_format), to_date=today.strftime(ymd_format), drop_latest=True)
+        else:
+            fu.dump_historical_data_equity(ticker_name, symbol_name=_fyers_symbol_name, from_date=start_date.strftime(
+                ymd_format), to_date=to_date.strftime(ymd_format))
 
         start_date = (start_date + timedelta(days=99))
         to_date = (start_date + timedelta(days=99))
@@ -146,7 +147,7 @@ def download_data_chunk(ticker_name, chunk_in_days=99):
             print(start_date.strftime(ymd_format),
                   'to', today.strftime(ymd_format))
             fu.dump_historical_data_equity(ticker_name, symbol_name=_fyers_symbol_name, from_date=start_date.strftime(
-                ymd_format), to_date=today.strftime(ymd_format))
+                ymd_format), to_date=today.strftime(ymd_format), drop_latest=True)
 
 
 # df = fu.download_historical_data('NSE:BIOCON-EQ',granularity_in_mins=1, from_date="2022-9-1", to_date="2022-10-1")
@@ -165,7 +166,24 @@ now = datetime.now()
 today900am = datetime.now().replace(hour=9, minute=0, second=0, microsecond=0)
 today330pm = datetime.now().replace(hour=15, minute=30, second=0, microsecond=0)
 
+target_minute = 16  # set the target minute
+
 while datetime.now() > today900am and datetime.now() < today330pm:
-    download_data_chunk('DLINKINDIA')
-    # wait for an hour before downloading the new data
-    time.sleep(3600)
+
+    tickers = ['TATAMOTORS', 'DLINKINDIA']
+    for _ticker in tickers:
+        download_data_chunk(_ticker)
+
+    # calculate the next execution time based on the target minute
+    now = datetime.now()
+    next_hour = now.replace(
+        hour=now.hour + 1, minute=target_minute, second=0, microsecond=0)
+    # calculate the time to sleep until the next execution time
+    sleep_time = (next_hour - now).total_seconds()
+
+    print(
+        f'program will now run at {next_hour} to download the new data...')
+
+    time.sleep(sleep_time)
+    if now.minute >= target_minute:
+        next_hour += timedelta(hours=1)
