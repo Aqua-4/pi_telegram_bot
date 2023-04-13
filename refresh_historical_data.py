@@ -3,7 +3,7 @@
     Program to refresh market data 
     Triggered as cron every morning or on reboot. This program is to be kept running to maintain the instance of broker api. Closes after market hours.
     $ crontab -e
-    11 9 * * 1-5 cd /home/pi/pi-telegram-bot && nohup python3 stock_market_monitor.py > stock_market_monitor_log.txt &
+    11 9 * * 1-5 cd /home/pi/pi-telegram-bot && nohup python refresh_historical_data.py > refresh_historical_data_log.txt &
 """
 
 from datetime import datetime, timedelta
@@ -132,7 +132,7 @@ def download_data_chunk(ticker_name, chunk_in_days=99):
 
     while to_date <= today:
         _fyers_symbol_name = f"NSE:{ticker_name}-EQ"
-        print(start_date.strftime(ymd_format),
+        print(f'Downloading data for {ticker_name} \t from',start_date.strftime(ymd_format),
               'to', to_date.strftime(ymd_format))
         if to_date == today:
             fu.dump_historical_data_equity(ticker_name, symbol_name=_fyers_symbol_name, from_date=start_date.strftime(
@@ -144,7 +144,7 @@ def download_data_chunk(ticker_name, chunk_in_days=99):
         start_date = (start_date + timedelta(days=99))
         to_date = (start_date + timedelta(days=99))
         if to_date > today and start_date < today:
-            print(start_date.strftime(ymd_format),
+            print(f'Downloading data for {ticker_name} \t from',start_date.strftime(ymd_format),
                   'to', today.strftime(ymd_format))
             fu.dump_historical_data_equity(ticker_name, symbol_name=_fyers_symbol_name, from_date=start_date.strftime(
                 ymd_format), to_date=today.strftime(ymd_format), drop_latest=True)
@@ -168,9 +168,13 @@ today330pm = datetime.now().replace(hour=15, minute=30, second=0, microsecond=0)
 
 target_minute = 16  # set the target minute
 
+# download_data_chunk('ONGC')
+
 while datetime.now() > today900am and datetime.now() < today330pm:
 
-    tickers = ['TATAMOTORS', 'DLINKINDIA']
+    tickers = ['TATAMOTORS', 'DLINKINDIA', 'AFFLE',
+               'DMART', 'WIPRO', 'TATAPOWER',  'CDSL',  'ONGC']
+
     for _ticker in tickers:
         download_data_chunk(_ticker)
 
@@ -187,3 +191,5 @@ while datetime.now() > today900am and datetime.now() < today330pm:
     time.sleep(sleep_time)
     if now.minute >= target_minute:
         next_hour += timedelta(hours=1)
+
+print(f'Markets closed, program will now exit.')
