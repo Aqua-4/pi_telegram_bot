@@ -7,7 +7,9 @@
 """
 import os
 import telepot
+from telepot.exception import TelegramError
 from dotenv import load_dotenv
+import time
 
 load_dotenv('telegram.env')
 
@@ -31,7 +33,16 @@ class TelegramBot:
         message_str = ''
         for _msg in message:
             message_str += f'{_msg}'
-        return self.bot.sendMessage(self.chat_id, message_str)
+
+        try:
+            return self.bot.sendMessage(self.chat_id, message_str)
+        except TelegramError as e:
+            if e.error_code == 429:
+                # If the error code is 429 (Too Many Requests), parse the Retry-After header value
+                retry_after = int(e.response.get('Retry-After'))
+                print(f"Rate limited. Waiting for {retry_after} seconds...")
+                time.sleep(retry_after+1)
+                return self.bot.sendMessage(self.chat_id, message_str)
 
     def extract_text_message(self, msg, mark_as_read=False):
         """
