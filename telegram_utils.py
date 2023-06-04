@@ -10,6 +10,7 @@ import telepot
 from telepot.exception import TelegramError
 from dotenv import load_dotenv
 import time
+from telepot.loop import MessageLoop
 
 load_dotenv('telegram.env')
 
@@ -23,11 +24,30 @@ class TelegramBot:
         self.chat_id = os.environ[chat_id]
         self.bot.getMe()
 
+    def handle(msg):
+        return msg
+    # >>> MessageLoop(bot, handle).run_as_thread()
+
     def get_text_message(self, mark_as_read=False):
         msg = self.bot.getUpdates()
         if msg:
             return self.extract_text_message(msg[-1], mark_as_read)
         return None
+
+    def send_html_message(self, html_file_path, caption='Chart', chat_id=None):
+
+        if chat_id == None:
+            chat_id = self.chat_id
+
+        try:
+            return self.bot.sendDocument(chat_id, open(html_file_path, 'rb'), caption=caption)
+        except TelegramError as e:
+            if e.error_code == 429:
+                # If the error code is 429 (Too Many Requests), parse the Retry-After header value
+                retry_after = int(e.response.get('Retry-After'))
+                print(f"Rate limited. Waiting for {retry_after} seconds...")
+                time.sleep(retry_after+1)
+                return self.bot.sendDocument(chat_id, open(html_file_path, 'rb'), caption=caption)
 
     def send_text_message(self, *message):
         message_str = ''
@@ -72,3 +92,5 @@ if __name__ == '__main__':
     t_bot = TelegramBot()
     t_bot.send_text_message('Testing telegram utility function')
     t_bot.get_text_message()
+
+    t_bot.send_html_message('./candlestick_chart.html')
