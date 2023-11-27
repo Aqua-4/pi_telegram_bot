@@ -9,7 +9,7 @@ import time
 from bot_utils import BotSwitch
 import re
 from dotenv import load_dotenv
-from telegram_utils import TelegramBot
+from telegram_bot.telegram_utils import TelegramBot
 
 load_dotenv()
 

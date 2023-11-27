@@ -11,6 +11,11 @@ from telepot.exception import TelegramError
 from dotenv import load_dotenv
 import time
 from telepot.loop import MessageLoop
+import logging
+
+
+# simply use the logger from execution file
+logger = logging.getLogger('backtrader')
 
 load_dotenv('telegram.env')
 
@@ -30,6 +35,7 @@ class TelegramBot:
 
     def get_text_message(self, mark_as_read=False):
         msg = self.bot.getUpdates()
+        logger.debug(f'get_text_message: msg = {msg}')
         if msg:
             return self.extract_text_message(msg[-1], mark_as_read)
         return None
@@ -55,14 +61,18 @@ class TelegramBot:
             message_str += f'{_msg}'
 
         try:
-            return self.bot.sendMessage(self.chat_id, message_str)
-        except TelegramError as e:
-            if e.error_code == 429:
-                # If the error code is 429 (Too Many Requests), parse the Retry-After header value
-                retry_after = int(e.response.get('Retry-After'))
-                print(f"Rate limited. Waiting for {retry_after} seconds...")
-                time.sleep(retry_after+1)
+            try:
                 return self.bot.sendMessage(self.chat_id, message_str)
+            except TelegramError as e:
+                if e.error_code == 429:
+                    # If the error code is 429 (Too Many Requests), parse the Retry-After header value
+                    retry_after = int(e.response.get('Retry-After'))
+                    print(f"Rate limited. Waiting for {retry_after} seconds...")
+                    time.sleep(retry_after+1)
+                    return self.bot.sendMessage(self.chat_id, message_str)
+        except Exception as err:
+            print(err)
+            import pdb; pdb.set_trace()
 
     def extract_text_message(self, msg, mark_as_read=False):
         """
@@ -80,8 +90,12 @@ class TelegramBot:
         message_text
 
         """
+        logger.debug(f"extract_text_message: msg = {msg}")
         update_id = msg.get('update_id')
         _message = msg.get('message')
+        if not _message:
+            self.bot.getUpdates(offset=update_id+1)
+            return None
         if mark_as_read:
             self.bot.getUpdates(offset=update_id+1)
         return update_id, _message.get('chat').get('id'), _message.get('text')
