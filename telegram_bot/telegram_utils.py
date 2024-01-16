@@ -51,9 +51,26 @@ class TelegramBot:
             if e.error_code == 429:
                 # If the error code is 429 (Too Many Requests), parse the Retry-After header value
                 retry_after = int(e.response.get('Retry-After'))
-                print(f"Rate limited. Waiting for {retry_after} seconds...")
+                logger.error(f"Rate limited. Waiting for {retry_after} seconds...")
                 time.sleep(retry_after+1)
                 return self.bot.sendDocument(chat_id, open(html_file_path, 'rb'), caption=caption)
+
+
+    def send_image(self, image_file_path, caption=None, chat_id=None):
+
+        if chat_id == None:
+            chat_id = self.chat_id
+
+        try:
+            return self.bot.sendPhoto(chat_id, open(image_file_path, 'rb'), caption=caption)
+        except TelegramError as e:
+            if e.error_code == 429:
+                # If the error code is 429 (Too Many Requests), parse the Retry-After header value
+                retry_after = int(e.response.get('Retry-After'))
+                logger.error(f"Rate limited. Waiting for {retry_after} seconds...")
+                time.sleep(retry_after+1)
+                return self.bot.sendPhoto(chat_id, open(image_file_path, 'rb'), caption=caption)
+
 
     def send_text_message(self, *message):
         message_str = ''
@@ -67,12 +84,11 @@ class TelegramBot:
                 if e.error_code == 429:
                     # If the error code is 429 (Too Many Requests), parse the Retry-After header value
                     retry_after = int(e.response.get('Retry-After'))
-                    print(f"Rate limited. Waiting for {retry_after} seconds...")
+                    logger.error(f"Rate limited. Waiting for {retry_after} seconds...")
                     time.sleep(retry_after+1)
                     return self.bot.sendMessage(self.chat_id, message_str)
         except Exception as err:
             print(err)
-            import pdb; pdb.set_trace()
 
     def extract_text_message(self, msg, mark_as_read=False):
         """
