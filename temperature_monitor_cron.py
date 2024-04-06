@@ -11,12 +11,8 @@ from bot_utils import BotSwitch
 import re
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv('telegram.env')
 
-
-# TOKEN = sys.argv[1]  # get token from command-line
-# print(os.environ)
-# aqua4_pi_bot
 botname = 'aqua4_pi_bot'  # bot secret will be stored in the env var with this key
 bot = telepot.Bot(os.environ[botname])
 chat_id = os.environ['chat_id']
