@@ -21,13 +21,22 @@ load_dotenv('telegram.env')
 
 
 class TelegramBot:
+    _instances = {}
+
+    def __new__(cls, chat_id='my_chat_id'):
+        if chat_id not in cls._instances:
+            instance = super(TelegramBot, cls).__new__(cls)
+            cls._instances[chat_id] = instance
+            logger.warning('created new bot instance')
+        return cls._instances[chat_id]
 
     def __init__(self, chat_id='my_chat_id') -> None:
-        # bot secret will be stored in the env var with this key
-        self.botname = 'aqua4_pi_bot'
-        self.bot = telepot.Bot(os.environ[self.botname])
-        self.chat_id = os.environ[chat_id]
-        self.bot.getMe()
+        if not hasattr(self, 'initialized'):
+            self.botname = 'aqua4_pi_bot'
+            self.bot = telepot.Bot(os.environ[self.botname])
+            self.chat_id = os.environ[chat_id]
+            self.bot.getMe()
+            self.initialized = True
 
     def handle(msg):
         return msg
