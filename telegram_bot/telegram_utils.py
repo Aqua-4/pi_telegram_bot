@@ -15,28 +15,37 @@ import logging
 
 
 # simply use the logger from execution file
-logger = logging.getLogger('backtrader')
+logger = logging.getLogger('telegram')
+# create file handlers
+log_file = logging.FileHandler('../log/telegram.log', mode='w')
+json_file = logging.FileHandler('../log/telegram.json.log', mode='w')
+# create formatter and add it to the handlers
+detailed_formatter = logging.Formatter(
+    '%(asctime)s [%(levelname)s] [%(name)s] [%(funcName)s:%(lineno)d] - %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
+json_formatter = logging.Formatter(
+    '{"timestamp": "%(asctime)s", "level": "%(levelname)s", "logger": "%(name)s", "function": "%(funcName)s", "line": %(lineno)d, "message": "%(message)s"}', datefmt='%m/%d/%Y %I:%M:%S %p')
+# set formatter for log file
+log_file.setFormatter(detailed_formatter)
+json_file.setFormatter(json_formatter)
+# add the handlers to the logger
+logger.addHandler(log_file)
+logger.addHandler(json_file)
+# set the logging level
+logger.setLevel(logging.INFO)
+
 
 load_dotenv('telegram.env')
 
 
 class TelegramBot:
-    _instances = {}
-
-    def __new__(cls, chat_id='my_chat_id'):
-        if chat_id not in cls._instances:
-            instance = super(TelegramBot, cls).__new__(cls)
-            cls._instances[chat_id] = instance
-            logger.warning(f'created new bot instance for {chat_id}')
-        return cls._instances[chat_id]
 
     def __init__(self, chat_id='my_chat_id') -> None:
-        if not hasattr(self, 'initialized'):
-            self.botname = 'aqua4_pi_bot'
-            self.bot = telepot.Bot(os.environ[self.botname])
-            self.chat_id = os.environ[chat_id]
-            self.bot.getMe()
-            self.initialized = True
+        # bot secret will be stored in the env var with this key
+        self.botname = 'aqua4_pi_bot'
+        self.bot = telepot.Bot(os.environ[self.botname])
+        self.chat_id = os.environ[chat_id]
+        self.bot.getMe()
+        logger.warning(f'created telegram instance for {chat_id}')
 
     def handle(msg):
         return msg
@@ -64,7 +73,6 @@ class TelegramBot:
                 time.sleep(retry_after+1)
                 return self.bot.sendDocument(chat_id, open(html_file_path, 'rb'), caption=caption)
 
-
     def send_image(self, image_file_path, caption=None, chat_id=None):
 
         if chat_id == None:
@@ -79,7 +87,6 @@ class TelegramBot:
                 logger.error(f"Rate limited. Waiting for {retry_after} seconds...")
                 time.sleep(retry_after+1)
                 return self.bot.sendPhoto(chat_id, open(image_file_path, 'rb'), caption=caption)
-
 
     def send_text_message(self, *message):
         message_str = ''
