@@ -27,7 +27,7 @@ class TelegramBot:
         if chat_id not in cls._instances:
             instance = super(TelegramBot, cls).__new__(cls)
             cls._instances[chat_id] = instance
-            logger.warning('created new bot instance')
+            logger.warning(f'created new bot instance for {chat_id}')
         return cls._instances[chat_id]
 
     def __init__(self, chat_id='my_chat_id') -> None:
