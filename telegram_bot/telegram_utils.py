@@ -45,17 +45,38 @@ class TelegramBot:
         self.bot = telepot.Bot(os.environ[self.botname])
         self.chat_id = os.environ[chat_id]
         self.bot.getMe()
+        self.direct_messages = []
         logger.warning(f'created telegram instance for {chat_id}')
 
     def handle(msg):
         return msg
     # >>> MessageLoop(bot, handle).run_as_thread()
 
-    def get_text_message(self, mark_as_read=False):
+    def stack_direct_messages(self):
+        updates = self.bot.getUpdates()
+        for update in updates:
+            if 'message' in update:
+                update_id = update['update_id']
+                msg = update['message']
+                chat_id = msg['chat']['id']
+                if str(chat_id) == str(self.chat_id):
+                    self.direct_messages.append(msg['text'])
+                    self.bot.getUpdates(offset=update_id+1)
+
+
+    def pop_last_message(self):
+        if self.direct_messages:
+            return self.direct_messages.pop()
+
+    def get_text_message(self, mark_as_read=False, descending = True):
         msg = self.bot.getUpdates()
         logger.debug(f'get_text_message: msg = {msg}')
         if msg:
-            return self.extract_text_message(msg[-1], mark_as_read)
+            if descending:
+                return self.extract_text_message(msg[-1], mark_as_read)
+            # return first message
+            return self.extract_text_message(msg[0], mark_as_read)
+
         return None
 
     def send_html_message(self, html_file_path, caption='Chart', chat_id=None):
