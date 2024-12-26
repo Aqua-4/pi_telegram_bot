@@ -13,12 +13,15 @@ import time
 from telepot.loop import MessageLoop
 import logging
 
+log_dir_path = '../log'
+if not os.path.exists(log_dir_path):
+    os.makedirs(log_dir_path)
 
 # simply use the logger from execution file
 logger = logging.getLogger('telegram')
 # create file handlers
-log_file = logging.FileHandler('../log/telegram.log', mode='w')
-json_file = logging.FileHandler('../log/telegram.json.log', mode='w')
+log_file = logging.FileHandler(f'{log_dir_path}/telegram.log', mode='w')
+json_file = logging.FileHandler(f'{log_dir_path}/telegram.json.log', mode='w')
 # create formatter and add it to the handlers
 detailed_formatter = logging.Formatter(
     '%(asctime)s [%(levelname)s] [%(name)s] [%(funcName)s:%(lineno)d] - %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
