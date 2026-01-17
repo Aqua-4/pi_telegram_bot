@@ -7,7 +7,13 @@
             "source.organizeImports.ruff": "always"
         }
     },
-    // This tells Ruff to look into the backend folder for the config
+    // --- Add these settings for Jupyter Notebooks ---
+    "notebook.formatOnSave.enabled": true,
+    "notebook.codeActionsOnSave": {
+        "notebook.source.fixAll": "explicit",
+        "notebook.source.organizeImports": "explicit"
+    },
+    // ------------------------------------------------
     "ruff.configuration": "pyproject.toml",
     "ruff.importStrategy": "fromEnvironment"
 }
