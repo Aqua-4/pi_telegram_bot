@@ -1,0 +1,26 @@
+[project]
+name = "pi_telegram_bot"
+version = "0.1"
+description = "Telegram bot"
+authors = [
+    { name = "Parashar Sangle", email = "parasharSangle@gmail.com" }
+]
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "telepot==12.7",
+    "python-dotenv==1.0.0",
+    "pandas",
+    "python-telegram-bot==20.8",
+]
+
+[project.urls]
+Homepage = "https://github.com/Aqua-4/pi_telegram_bot"
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["telegram_bot"]
