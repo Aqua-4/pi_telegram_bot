@@ -102,6 +102,9 @@ class TelegramBot:
                 return self.bot.sendDocument(
                     chat_id, open(html_file_path, "rb"), caption=caption
                 )
+            else:
+                logger.error(f"Failed to send HTML message: {e}")
+                raise e
 
     def send_image(self, image_file_path, caption=None, chat_id=None):
         if chat_id == None:
@@ -120,6 +123,9 @@ class TelegramBot:
                 return self.bot.sendPhoto(
                     chat_id, open(image_file_path, "rb"), caption=caption
                 )
+            else:
+                logger.error(f"Failed to send image: {e}")
+                raise e
 
     def send_text_message(self, *message):
         message_str = ""
@@ -137,7 +143,8 @@ class TelegramBot:
                     time.sleep(retry_after + 1)
                     return self.bot.sendMessage(self.chat_id, message_str)
         except Exception as err:
-            print(err)
+            logger.error(f"Failed to send text message: {err}")
+            raise err
 
     def extract_text_message(self, msg, mark_as_read=False):
         """
